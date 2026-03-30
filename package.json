@@ -15,9 +15,10 @@
     "lint": "biome check src/"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1",
+    "reflect-metadata": "^0.2.2",
     "typescript": "^5.7",
-    "vitest": "^3",
-    "@biomejs/biome": "^1"
+    "vitest": "^3"
   },
   "engines": {
     "node": ">=22.0.0"
