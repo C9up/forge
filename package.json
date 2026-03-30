@@ -1,0 +1,25 @@
+{
+  "name": "@c9up/forge",
+  "version": "0.1.0",
+  "description": "Forge — CLI tools for the Ream framework",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "forge": "./dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "biome check src/"
+  },
+  "devDependencies": {
+    "typescript": "^5.7",
+    "vitest": "^3",
+    "@biomejs/biome": "^1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
