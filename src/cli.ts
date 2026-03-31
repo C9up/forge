@@ -12,6 +12,7 @@ import { Generator } from './Generator.js'
 import { MigrationRunner } from './MigrationRunner.js'
 import { Doctor } from './Doctor.js'
 import { Inspector } from './Inspector.js'
+import { runConfigure } from './Configure.js'
 import type { GeneratorType } from './Generator.js'
 
 const MAKE_COMMANDS: Record<string, GeneratorType> = {
@@ -23,7 +24,7 @@ const MAKE_COMMANDS: Record<string, GeneratorType> = {
   'make:migration': 'migration',
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2)
   const command = args[0]
   const name = args[1]
@@ -43,6 +44,18 @@ function main() {
     return
   }
 
+  // Configure command
+  if (command === 'configure') {
+    if (!name) {
+      process.stderr.write('Usage: forge configure <package-name>\n')
+      process.stderr.write('  Example: forge configure @c9up/atlas\n')
+      process.exit(1)
+    }
+    const result = await runConfigure(name, { force: args.includes('--force') })
+    if (!result.success) process.exit(1)
+    return
+  }
+
   // Inspect command
   if (command === 'inspect') {
     if (!name) {
@@ -51,8 +64,13 @@ function main() {
       process.exit(1)
     }
     const inspector = new Inspector()
+    const resolved = path.resolve(name)
+    if (!resolved.startsWith(process.cwd() + path.sep)) {
+      process.stderr.write(`Refusing to load file outside project directory: ${resolved}\n`)
+      process.exit(1)
+    }
     try {
-      const mod = await import(path.resolve(name))
+      const mod = await import(resolved)
       const exported = Object.values(mod).filter((v): v is Function => typeof v === 'function')
       if (exported.length === 0) {
         process.stderr.write(`No exported classes found in ${name}\n`)
@@ -144,20 +162,25 @@ Generator Commands:
 Migration Commands:
   migrate:status   Show migration status
 
+Package Management:
+  configure <pkg>  Configure a package (auto-setup provider, config, env)
+
 Diagnostics:
   doctor           Run environment health checks
   inspect <file>   Inspect decorator metadata on exported classes
 
 Examples:
+  forge configure @c9up/atlas
+  forge configure @c9up/tailwind
   forge make:controller order Order   → app/modules/order/controllers/OrderController.ts
   forge make:service order Payment    → app/modules/order/services/PaymentService.ts
   forge make:entity order Order       → app/modules/order/entities/Order.ts
-  forge make:validator order CreateOrder → app/modules/order/validators/CreateOrderValidator.ts
   forge make:provider Stripe          → providers/StripeProvider.ts
-  forge make:migration create_orders_table
   forge doctor
-  forge inspect app/modules/order/controllers/OrderController.ts
 `)
 }
 
-main()
+main().catch((err) => {
+  process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`)
+  process.exit(1)
+})
